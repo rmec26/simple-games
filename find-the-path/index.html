@@ -1,9 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Find the Path</title>
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <!-- <link rel="manifest" href="/manifest.json">
+  <link rel="shortcut icon" type="image/png" sizes="16x16 32x32 64x64" href="/icons/icon-192x192.png"> -->
   <script>
 
     function main() {
       let width = 5;
       let height = 10;
+      let attempt = 0;
 
       const paramsString = window.location.search;
       const searchParams = new URLSearchParams(paramsString);
@@ -111,6 +122,8 @@
 
       let cells = [];
 
+      let attemptsCell;
+
       let nextMoves;
       let currentPath;
 
@@ -136,6 +149,7 @@
       }
 
       function reset() {
+        attempt++;
         nextMoves = [];
         currentPath = [];
 
@@ -146,6 +160,7 @@
           nextMoves.push([i, 0]);
         }
         updateMoveClasses()
+        attemptsCell.innerText = `Attempt ${attempt}`
       }
 
       function play(x, y) {
@@ -165,21 +180,36 @@
         }
       }
 
-      function addSingleCellLine(table, text, className) {
+      function addTextLine(table, text, className, colNum = width + 1) {
         let line = document.createElement("tr");
         let cell = document.createElement("td");
         cell.innerText = text;
-        cell.classList.add(className)
-        cell.colSpan = width;
+        if (className) {
+          cell.classList.add(className)
+        }
+        cell.colSpan = colNum;
         line.appendChild(cell);
         container.appendChild(line);
-        return cell;
+        return line;
+      }
+
+      function addTextLineWithPadding(table, text, className, paddingText, paddingClassName) {
+        let line = addTextLine(table, text, className, width);
+
+        let padding = document.createElement("td");
+        padding.innerText = paddingText;
+        if (paddingClassName) {
+          padding.classList.add(paddingClassName)
+        }
+        line.appendChild(padding);
+        return padding;
       }
 
       function loadTable() {
         let container = document.getElementById("container");
 
-        addSingleCellLine(container, "Start", "valid");
+        addTextLine(container, "Find the Path");
+        attemptsCell = addTextLineWithPadding(container, "Start", "valid", "Attempt");
 
         for (let y = 0; y < height; y++) {
           let line = document.createElement("tr");
@@ -194,12 +224,16 @@
             line.appendChild(cell);
             cellLine.push(cell);
           }
+          let padding = document.createElement("td");
+
+          line.appendChild(padding);
+
           container.appendChild(line);
           cells.push(cellLine);
         }
 
-        addSingleCellLine(container, "End", "end");
-        addSingleCellLine(container, "Reset", "reset").onclick = reset;
+        addTextLineWithPadding(container, "End", "end", "Reset", "reset").onclick = reset;
+        // addTextLine(container, "Reset", "reset").onclick = reset;
 
         reset()
       }
@@ -285,3 +319,5 @@
 
   </table>
 </body>
+
+</html>
