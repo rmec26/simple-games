@@ -1,0 +1,30 @@
+td {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #dddddd;
+  text-align: center;
+}
+
+.unselected {
+  background-color: grey;
+}
+
+.nextOption {
+  background-color: cyan;
+}
+
+.valid {
+  background-color: yellow;
+}
+
+.fail {
+  background-color: red;
+}
+
+.end {
+  background-color: green;
+}
+
+.reset {
+  background-color: lightgrey;
+}
