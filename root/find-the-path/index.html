@@ -165,8 +165,21 @@
         }
       }
 
+      function addSingleCellLine(table, text, className) {
+        let line = document.createElement("tr");
+        let cell = document.createElement("td");
+        cell.innerText = text;
+        cell.classList.add(className)
+        cell.colSpan = width;
+        line.appendChild(cell);
+        container.appendChild(line);
+        return cell;
+      }
+
       function loadTable() {
         let container = document.getElementById("container");
+
+        addSingleCellLine(container, "Start", "valid");
 
         for (let y = 0; y < height; y++) {
           let line = document.createElement("tr");
@@ -184,6 +197,10 @@
           container.appendChild(line);
           cells.push(cellLine);
         }
+
+        addSingleCellLine(container, "End", "end");
+        addSingleCellLine(container, "Reset", "reset").onclick = reset;
+
         reset()
       }
 
@@ -234,6 +251,7 @@
       width: 50px;
       height: 50px;
       border: 1px solid #dddddd;
+      text-align: center;
     }
 
     .unselected {
@@ -255,6 +273,10 @@
     .end {
       background-color: green;
     }
+
+    .reset {
+      background-color: lightgrey;
+    }
   </style>
 </head>
 
@@ -262,5 +284,4 @@
   <table id="container">
 
   </table>
-  <input type="button" value="Reset" onclick="reset()" />
 </body>
