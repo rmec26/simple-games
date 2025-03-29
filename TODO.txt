@@ -1,7 +1,0 @@
-Center table
-check how to make it work properlly on android
-add seed processing code
-fix right colum generation
-improve ui
-add bottom ui to set width height and seed
-add share button

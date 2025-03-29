@@ -5,6 +5,10 @@ td {
   text-align: center;
 }
 
+table {
+  margin: auto;
+}
+
 .unselected {
   background-color: grey;
 }
