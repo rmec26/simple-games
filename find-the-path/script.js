@@ -122,13 +122,16 @@ function main() {
   function updateMoveClasses() {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        cells[y][x].classList.remove("unselected", "valid", "nextOption", "fail", "end");
+        cells[y][x].classList.remove("unselected", "valid", "nextOption", "fail", "end", "win");
         if (hasValue(currentPath, x, y)) {
           cells[y][x].classList.add("valid");
         } else if (!endValue && hasValue(nextMoves, x, y)) {
           cells[y][x].classList.add("nextOption");
         } else if (endValue && endValue[0] == x && endValue[1] == y) {
-          cells[y][x].classList.add(hasFailed ? "fail" : "end");
+          cells[y][x].classList.add(hasFailed ? "fail" : "valid");
+        } else if (endValue && !hasFailed) {
+          cells[y][x].classList.add("win");
+
         } else {
           cells[y][x].classList.add("unselected");
 
@@ -195,9 +198,14 @@ function main() {
     return padding;
   }
 
+  function cellClick() {
+    console.log("click")
+    play(this.x, this.y);
+  }
+
   function loadTable() {
     let container = document.getElementById("container");
-    //The *3 is for the title, start and end lines
+    //The baseLineSize*3 is to remove the height of the 'title', 'start' and 'end' lines
     let cellSize = ((window.innerHeight - baseLineSize * 3) / height) | 0;
     addTextLine(container, "Find the Path");
     attemptsCell = addTextLineWithPadding(container, "Start", "valid", "Attempt", "attempt");
@@ -209,11 +217,9 @@ function main() {
         let cell = document.createElement("td");
         cell.style.height = `${cellSize}px`;
         cell.style.width = `${cellSize}px`;
-        // cell.x = x;
-        // cell.y = y;
-        cell.onclick = () => {
-          play(x, y);
-        }
+        cell.x = x;
+        cell.y = y;
+        cell.onclick = cellClick
         line.appendChild(cell);
         cellLine.push(cell);
       }
