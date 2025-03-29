@@ -1,8 +1,6 @@
-check how to make it work properly on android
+check how to make it work properly on android pwa
 add seed processing code
-make it responsive
 add bottom ui to set width height and seed
 add share button
 consider using grid to make the UI
 remove bootstrap
-add win modal or change the way its rendered for the win/fail

@@ -1,7 +1,7 @@
 td {
   border: 1px solid #dddddd;
   text-align: center;
-  padding:0px
+  padding: 0px
 }
 
 table {
@@ -32,21 +32,30 @@ table {
   background-color: lightgrey;
 }
 
-.attempt{
-  width: 70px;
-}
-
-
 .win {
   animation-name: win-animation;
-  animation-duration: 1.5s;
+  animation-duration: 2s;
   animation-iteration-count: infinite;
 }
 
 @keyframes win-animation {
-  0%   {background-color:hsl(0,100%,50%); left:0px; top:0px;}
-  25%   {background-color:hsl(90,100%,50%); left:0px; top:0px;}
-  50%   {background-color:hsl(180,100%,50%); left:0px; top:0px;}
-  75%   {background-color:hsl(270,100%,50%); left:0px; top:0px;}
-  100% {background-color:hsl(0,100%,50%); left:0px; top:0px;}
+  0% {
+    background-color: hsl(0, 100%, 50%);
+  }
+
+  25% {
+    background-color: hsl(90, 100%, 50%);
+  }
+
+  50% {
+    background-color: hsl(180, 100%, 50%);
+  }
+
+  75% {
+    background-color: hsl(270, 100%, 50%);
+  }
+
+  100% {
+    background-color: hsl(0, 100%, 50%);
+  }
 }

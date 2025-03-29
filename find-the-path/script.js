@@ -3,7 +3,9 @@ function main() {
   let width = 5;
   let height = 10;
   let attempt = 0;
-  let baseLineSize = 50;
+  const baseLineSize = 50;
+  const baseSidebarSize = 70;
+  const minCellSize = 32;
 
   const paramsString = window.location.search;
   const searchParams = new URLSearchParams(paramsString);
@@ -119,6 +121,14 @@ function main() {
   let hasFailed;
   let endValue;
 
+  function autoWin() {
+    currentPath = [...generatedPath];
+    nextMoves = [currentPath.pop()];
+    updateMoveClasses();
+  }
+
+  // globalThis.autoWin = autoWin;
+
   function updateMoveClasses() {
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -186,37 +196,50 @@ function main() {
     return line;
   }
 
-  function addTextLineWithPadding(table, text, className, paddingText, paddingClassName) {
+  function addTextLineWithSidebar(table, text, className, sidebarText, sidebarClassName) {
     let line = addTextLine(table, text, className, width);
 
-    let padding = document.createElement("td");
-    padding.innerText = paddingText;
-    if (paddingClassName) {
-      padding.classList.add(paddingClassName)
+    let sidebar = document.createElement("td");
+    sidebar.style.width = `${baseSidebarSize}px`;
+
+    sidebar.innerText = sidebarText;
+    if (sidebarClassName) {
+      sidebar.classList.add(sidebarClassName)
     }
-    line.appendChild(padding);
-    return padding;
+    line.appendChild(sidebar);
+    return sidebar;
   }
 
   function cellClick() {
-    console.log("click")
     play(this.x, this.y);
+  }
+
+  function resizeCells() {
+    //The baseLineSize*3 is to remove the height of the 'title', 'start' and 'end' lines
+    let cellSizeHeigth = ((window.innerHeight - baseLineSize * 3) / height) | 0;
+    let cellSizeWidth = ((window.innerWidth - baseSidebarSize) / width) | 0;
+    let cellSize = Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth);
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const cell = cells[y][x];
+        cell.style.height = `${cellSize}px`;
+        cell.style.width = `${cellSize}px`;
+        cell.style.minHeight = `${cellSize}px`;
+        cell.style.minWidth = `${cellSize}px`;
+      }
+    }
   }
 
   function loadTable() {
     let container = document.getElementById("container");
-    //The baseLineSize*3 is to remove the height of the 'title', 'start' and 'end' lines
-    let cellSize = ((window.innerHeight - baseLineSize * 3) / height) | 0;
     addTextLine(container, "Find the Path");
-    attemptsCell = addTextLineWithPadding(container, "Start", "valid", "Attempt", "attempt");
-    // attemptsCell.style.width = "70px";
+    attemptsCell = addTextLineWithSidebar(container, "Start", "valid", "Attempt", "attempt");
     for (let y = 0; y < height; y++) {
       let line = document.createElement("tr");
       let cellLine = [];
       for (let x = 0; x < width; x++) {
         let cell = document.createElement("td");
-        cell.style.height = `${cellSize}px`;
-        cell.style.width = `${cellSize}px`;
         cell.x = x;
         cell.y = y;
         cell.onclick = cellClick
@@ -227,17 +250,14 @@ function main() {
         let padding = document.createElement("td");
         padding.rowSpan = height;
         line.appendChild(padding);
-
-
       }
-
 
       container.appendChild(line);
       cells.push(cellLine);
     }
 
-    addTextLineWithPadding(container, "End", "end", "Reset", "reset").onclick = reset;
-
+    addTextLineWithSidebar(container, "End", "end", "Reset", "reset").onclick = reset;
+    resizeCells();
     reset()
   }
 
@@ -279,6 +299,8 @@ function main() {
       }
     }
   });
+
+  window.addEventListener("resize", resizeCells);
 
   loadTable()
 }
