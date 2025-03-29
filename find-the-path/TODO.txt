@@ -1,7 +1,5 @@
 check how to make it work properly on android
 add seed processing code
-fix right colum generation
-improve ui
+make it responsive
 add bottom ui to set width height and seed
 add share button
-make the box size be relative to screen size

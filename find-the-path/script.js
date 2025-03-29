@@ -3,6 +3,7 @@ function main() {
   let width = 5;
   let height = 10;
   let attempt = 0;
+  let baseLineSize = 50;
 
   const paramsString = window.location.search;
   const searchParams = new URLSearchParams(paramsString);
@@ -148,7 +149,7 @@ function main() {
       nextMoves.push([i, 0]);
     }
     updateMoveClasses()
-    attemptsCell.innerText = `Attempt ${attempt}`
+    attemptsCell.innerText = `Attempt\n${attempt}`
   }
 
   function play(x, y) {
@@ -170,6 +171,7 @@ function main() {
 
   function addTextLine(table, text, className, colNum = width + 1) {
     let line = document.createElement("tr");
+    line.style.height = `${baseLineSize}px`
     let cell = document.createElement("td");
     cell.innerText = text;
     if (className) {
@@ -177,7 +179,7 @@ function main() {
     }
     cell.colSpan = colNum;
     line.appendChild(cell);
-    container.appendChild(line);
+    table.appendChild(line);
     return line;
   }
 
@@ -195,33 +197,40 @@ function main() {
 
   function loadTable() {
     let container = document.getElementById("container");
-
+    //The *3 is for the title, start and end lines
+    let cellSize = ((window.innerHeight - baseLineSize * 3) / height) | 0;
     addTextLine(container, "Find the Path");
-    attemptsCell = addTextLineWithPadding(container, "Start", "valid", "Attempt");
-
+    attemptsCell = addTextLineWithPadding(container, "Start", "valid", "Attempt", "attempt");
+    // attemptsCell.style.width = "70px";
     for (let y = 0; y < height; y++) {
       let line = document.createElement("tr");
       let cellLine = [];
       for (let x = 0; x < width; x++) {
         let cell = document.createElement("td");
-        cell.x = x;
-        cell.y = y;
+        cell.style.height = `${cellSize}px`;
+        cell.style.width = `${cellSize}px`;
+        // cell.x = x;
+        // cell.y = y;
         cell.onclick = () => {
           play(x, y);
         }
         line.appendChild(cell);
         cellLine.push(cell);
       }
-      let padding = document.createElement("td");
+      if (y == 0) {
+        let padding = document.createElement("td");
+        padding.rowSpan = height;
+        line.appendChild(padding);
 
-      line.appendChild(padding);
+
+      }
+
 
       container.appendChild(line);
       cells.push(cellLine);
     }
 
     addTextLineWithPadding(container, "End", "end", "Reset", "reset").onclick = reset;
-    // addTextLine(container, "Reset", "reset").onclick = reset;
 
     reset()
   }
