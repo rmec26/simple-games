@@ -7,6 +7,8 @@ function main() {
   const baseSidebarSize = 70;
   const minCellSize = 32;
 
+// ---Param String Code---
+
   const paramsString = window.location.search;
   const searchParams = new URLSearchParams(paramsString);
 
@@ -23,6 +25,8 @@ function main() {
       height = value;
     }
   }
+
+  // ---Logic Code---
 
   function random(max) {
     return (Math.random() * max) | 0;
@@ -101,15 +105,9 @@ function main() {
     console.log(res.join("\n"));
   }
 
+  // ---UI Code---
 
-
-
-
-
-
-
-  let generatedPath = generatePath(width, height);
-  // printPath(width, height, generatedPath)
+  let generatedPath
 
   let cells = [];
 
@@ -120,14 +118,6 @@ function main() {
 
   let hasFailed;
   let endValue;
-
-  function autoWin() {
-    currentPath = [...generatedPath];
-    nextMoves = [currentPath.pop()];
-    updateMoveClasses();
-  }
-
-  // globalThis.autoWin = autoWin;
 
   function updateMoveClasses() {
     for (let y = 0; y < height; y++) {
@@ -232,6 +222,7 @@ function main() {
   }
 
   function loadTable() {
+    generatedPath = generatePath(width, height);
     let container = document.getElementById("container");
     addTextLine(container, "Find the Path");
     attemptsCell = addTextLineWithSidebar(container, "Start", "valid", "Attempt", "attempt");
@@ -256,7 +247,7 @@ function main() {
       cells.push(cellLine);
     }
 
-    addTextLineWithSidebar(container, "End", "end", "Reset", "reset").onclick = reset;
+    addTextLineWithSidebar(container, "End", "end", "Retry", "retry").onclick = reset;
     resizeCells();
     reset()
   }
@@ -303,4 +294,21 @@ function main() {
   window.addEventListener("resize", resizeCells);
 
   loadTable()
+
+
+
+  // ---Debug Code---
+
+  function showCurrentPath() {
+    printPath(width, height, generatedPath)
+  }
+
+  function autoWin() {
+    currentPath = [...generatedPath];
+    nextMoves = [currentPath.pop()];
+    updateMoveClasses();
+  }
+
+  globalThis.showCurrentPath = showCurrentPath;
+  globalThis.autoWin = autoWin;
 }
