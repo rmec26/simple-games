@@ -6,8 +6,70 @@ function main() {
   const baseLineSize = 50;
   const baseSidebarSize = 70;
   const minCellSize = 32;
+  let seed;
+  let generator;
 
-// ---Param String Code---
+
+  function parseSeed(seed) {
+    if (seed === null) {
+      return Date.now();
+    }
+    switch (typeof seed) {
+      case "number":
+        break;
+      case "string":
+        let res;
+        if (seed.length) {
+          res = Number.parseInt(seed);
+          if (Number.isNaN(res)) {
+            res = 0;
+            for (let i = 0; i < seed.length; i++) {
+              res += (i + 1) * seed.charCodeAt(i);
+            }
+          }
+        } else {
+          res = Date.now();
+        }
+        seed = res;
+        break;
+      case "undefined":
+        seed = Date.now();
+        break;
+      default:
+        seed = 1;
+    }
+    return Math.trunc(Math.abs(seed));
+  }
+
+  class LCG {
+    constructor(m, a, c) {
+      this.m = m;
+      this.a = a;
+      this.c = c;
+      this.seed();
+    }
+    seed(seed) {
+      this.curr = (parseSeed(seed) % this.m) || 1;
+    }
+
+    generate() {
+      this.curr = (this.a * this.curr + this.c) % this.m;
+      return this.curr;
+    }
+    generateRange(min, max) {
+      let size = max - min + 1;
+      return Math.trunc(this.generate() / this.m * size) + min
+    }
+  }
+
+  function getGenerator() {
+    let generator = new LCG(Math.pow(2, 31) - 1, 48271, 0);
+    generator.seed();
+    return generator;
+  }
+
+
+  // ---Param String Code---
 
   const paramsString = window.location.search;
   const searchParams = new URLSearchParams(paramsString);
@@ -26,10 +88,15 @@ function main() {
     }
   }
 
+  if (searchParams.has("seed")) {
+    seed = searchParams.get("seed");
+  }
+
   // ---Logic Code---
 
   function random(max) {
-    return (Math.random() * max) | 0;
+    // return (Math.random() * max) | 0;
+    return generator.generateRange(0, max);
   }
 
   function hasValue(currentPath, x, y) {
@@ -222,6 +289,8 @@ function main() {
   }
 
   function loadTable() {
+    generator = getGenerator();
+    generator.seed(seed);
     generatedPath = generatePath(width, height);
     let container = document.getElementById("container");
     addTextLine(container, "Find the Path");
@@ -299,16 +368,19 @@ function main() {
 
   // ---Debug Code---
 
-  function showCurrentPath() {
-    printPath(width, height, generatedPath)
-  }
+  //Disables the debug if running on Github pages
+  if (!window.location.hostname.includes("github.io")) {
+    function showCurrentPath() {
+      printPath(width, height, generatedPath)
+    }
 
-  function autoWin() {
-    currentPath = [...generatedPath];
-    nextMoves = [currentPath.pop()];
-    updateMoveClasses();
-  }
+    function autoWin() {
+      currentPath = [...generatedPath];
+      nextMoves = [currentPath.pop()];
+      updateMoveClasses();
+    }
 
-  globalThis.showCurrentPath = showCurrentPath;
-  globalThis.autoWin = autoWin;
+    globalThis.showCurrentPath = showCurrentPath;
+    globalThis.autoWin = autoWin;
+  }
 }
