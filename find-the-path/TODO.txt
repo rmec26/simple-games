@@ -2,3 +2,24 @@ check how to make it work properly on android pwa
 add bottom ui to set width height and seed
 add share button
 remove bootstrap
+
+change width and height to row and column
+add handling of space between the top and bottom boxes in the sidebar when the grid is small enough to keep them from overlapping
+add padding of the view
+
+lives system?
+checkpoint system?
+save current seed
+
+possible retro inspired UI
+
+hint system?
+  choses the next option
+
+lives vs hints
+
+Lives allow the player to make a mistake without losing the attempt
+Hints chooses the next option when desired
+
+Lives should be per attempt
+Hints should be per game

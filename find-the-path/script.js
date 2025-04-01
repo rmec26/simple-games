@@ -3,8 +3,8 @@ function main() {
   let width = 5;
   let height = 10;
   let attempt = 0;
-  const baseLineSize = 50;
-  const baseSidebarSize = 70;
+  const baseLineHeight = 50;
+  const baseSidebarWidth = 70;
   const minCellSize = 32;
   const maxCellSize = 96;
   let seed;
@@ -97,7 +97,7 @@ function main() {
 
   function random(max) {
     // return (Math.random() * max) | 0;
-    return generator.generateRange(0, max);
+    return generator.generateRange(0, max - 1);
   }
 
   function hasValue(currentPath, x, y) {
@@ -206,6 +206,12 @@ function main() {
     }
   }
 
+  function newGame() {
+    seed = null;
+    unloadTable();
+    loadTable();
+  }
+
   function retry() {
     attempt++;
     nextMoves = [];
@@ -286,38 +292,40 @@ function main() {
   let endBar;
   let sidebar;
   let attemptsBox;
+  let newBox;
   let retryBox;
 
   function resizeUi() {
     //consider a padding for the entire UI
-    let cellSizeHeigth = ((window.innerHeight - baseLineSize * 3) / height) | 0;
-    let cellSizeWidth = ((window.innerWidth - baseSidebarSize) / width) | 0;
+    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 3) / height) | 0;
+    let cellSizeWidth = ((window.innerWidth - baseSidebarWidth) / width) | 0;
     let cellSize = Math.min(Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth), maxCellSize);
 
     const playAreaWidth = cellSize * width;
-    const totalViewWidth = playAreaWidth + baseSidebarSize;
-    const sidebarHeight = cellSize * height + baseLineSize * 2;
+    const totalViewWidth = playAreaWidth + baseSidebarWidth;
+    const sidebarHeight = cellSize * height + baseLineHeight * 2;
 
-    const offsetX = Math.max((window.innerWidth - cellSize * width - baseSidebarSize) / 2 | 0, 0);
-    const offsetY = Math.max((window.innerHeight - cellSize * height - baseLineSize * 3) / 2 | 0, 0);
+    const offsetX = Math.max((window.innerWidth - cellSize * width - baseSidebarWidth) / 2 | 0, 0);
+    const offsetY = Math.max((window.innerHeight - cellSize * height - baseLineHeight * 3) / 2 | 0, 0);
     const sidebarX = offsetX + playAreaWidth;
 
-    topBar.sizePos(offsetX, offsetY, totalViewWidth, baseLineSize);
-    const startBarY = offsetY + baseLineSize;
-    startBar.sizePos(offsetX, startBarY, playAreaWidth, baseLineSize);
-    const gridY = startBarY + baseLineSize;
+    topBar.sizePos(offsetX, offsetY, totalViewWidth, baseLineHeight);
+    const startBarY = offsetY + baseLineHeight;
+    startBar.sizePos(offsetX, startBarY, playAreaWidth, baseLineHeight);
+    const gridY = startBarY + baseLineHeight;
 
     for (let cell of cells) {
       cell.sizePos(offsetX + cellSize * cell.x, gridY + cellSize * cell.y, cellSize, cellSize);
     }
     const endBarY = gridY + cellSize * height;
-    endBar.sizePos(offsetX, endBarY, playAreaWidth, baseLineSize);
-    sidebar.sizePos(sidebarX, startBarY, baseSidebarSize, sidebarHeight);
+    endBar.sizePos(offsetX, endBarY, playAreaWidth, baseLineHeight);
+    sidebar.sizePos(sidebarX, startBarY, baseSidebarWidth, sidebarHeight);
 
 
-    attemptsBox.sizePos(sidebarX, startBarY, baseSidebarSize, baseLineSize);
+    attemptsBox.sizePos(sidebarX, startBarY, baseSidebarWidth, baseLineHeight);
 
-    retryBox.sizePos(sidebarX, endBarY, baseSidebarSize, baseLineSize);
+    newBox.sizePos(sidebarX, endBarY - baseLineHeight, baseSidebarWidth, baseLineHeight);
+    retryBox.sizePos(sidebarX, endBarY, baseSidebarWidth, baseLineHeight);
   }
 
   function loadUi() {
@@ -326,14 +334,19 @@ function main() {
     endBar = addBox("end", "End");
     sidebar = addBox("", "");
     attemptsBox = addBox("", "Attempt\n0");
-    retryBox = addBox("retry", "Retry");
+    newBox = addBox("sidebarButton", "New");
+    retryBox = addBox("sidebarButton", "Retry");
 
+    newBox.onclick = newGame;
     retryBox.onclick = retryClick;
   }
 
   function loadTable() {
     generator = getGenerator();
     generator.seed(seed);
+    //This is to keep the first step from being too close from previous recent games due to using the current timestamp as the default seed
+    generator.generate();
+
     generatedPath = generatePath(width, height);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -348,10 +361,21 @@ function main() {
     retry();
   }
 
+  function unloadTable() {
+    attempt = 0;
+    for (let cell of cells) {
+      cell.remove();
+    }
+  }
+
+  loadUi();
+  loadTable();
 
   document.addEventListener("keypress", (event) => {
     if (event.code == "KeyR") {
       retryClick();
+    } else if (event.code == "KeyN") {
+      newGame();
     } else if (currentPath.length) {
       if (event.code == "KeyW" || event.code == "KeyI") {
         play(currentPath[currentPath.length - 1][0], currentPath[currentPath.length - 1][1] - 1);
@@ -387,11 +411,10 @@ function main() {
     }
   });
 
+
+
+
   window.addEventListener("resize", resizeUi);
-
-  loadUi();
-  loadTable();
-
 
 
   // ---Debug Code---
