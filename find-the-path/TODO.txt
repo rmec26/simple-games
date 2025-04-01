@@ -1,6 +1,4 @@
 check how to make it work properly on android pwa
-add seed processing code
 add bottom ui to set width height and seed
 add share button
-consider using grid to make the UI
 remove bootstrap

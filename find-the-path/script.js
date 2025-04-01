@@ -6,6 +6,7 @@ function main() {
   const baseLineSize = 50;
   const baseSidebarSize = 70;
   const minCellSize = 32;
+  const maxCellSize = 96;
   let seed;
   let generator;
 
@@ -178,36 +179,34 @@ function main() {
 
   let cells = [];
 
-  let attemptsCell;
-
   let nextMoves;
   let currentPath;
 
   let hasFailed;
   let endValue;
 
+
+
+
+
   function updateMoveClasses() {
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        cells[y][x].classList.remove("unselected", "valid", "nextOption", "fail", "end", "win");
-        if (hasValue(currentPath, x, y)) {
-          cells[y][x].classList.add("valid");
-        } else if (!endValue && hasValue(nextMoves, x, y)) {
-          cells[y][x].classList.add("nextOption");
-        } else if (endValue && endValue[0] == x && endValue[1] == y) {
-          cells[y][x].classList.add(hasFailed ? "fail" : "valid");
-        } else if (endValue && !hasFailed) {
-          cells[y][x].classList.add("win");
-
-        } else {
-          cells[y][x].classList.add("unselected");
-
-        }
+    for (let cell of cells) {
+      cell.classList.remove("unselected", "valid", "nextOption", "fail", "end", "win");
+      if (hasValue(currentPath, cell.x, cell.y)) {
+        cell.classList.add("valid");
+      } else if (!endValue && hasValue(nextMoves, cell.x, cell.y)) {
+        cell.classList.add("nextOption");
+      } else if (endValue && endValue[0] == cell.x && endValue[1] == cell.y) {
+        cell.classList.add(hasFailed ? "fail" : "valid");
+      } else if (endValue && !hasFailed) {
+        cell.classList.add("win");
+      } else {
+        cell.classList.add("unselected");
       }
     }
   }
 
-  function reset() {
+  function retry() {
     attempt++;
     nextMoves = [];
     currentPath = [];
@@ -219,7 +218,13 @@ function main() {
       nextMoves.push([i, 0]);
     }
     updateMoveClasses()
-    attemptsCell.innerText = `Attempt\n${attempt}`
+    attemptsBox.innerText = `Attempt\n${attempt}`
+  }
+
+  function retryClick() {
+    if (hasFailed) {
+      retry();
+    }
   }
 
   function play(x, y) {
@@ -239,92 +244,114 @@ function main() {
     }
   }
 
-  function addTextLine(table, text, className, colNum = width + 1) {
-    let line = document.createElement("tr");
-    line.style.height = `${baseLineSize}px`
-    let cell = document.createElement("td");
-    cell.innerText = text;
-    if (className) {
-      cell.classList.add(className)
-    }
-    cell.colSpan = colNum;
-    line.appendChild(cell);
-    table.appendChild(line);
-    return line;
-  }
-
-  function addTextLineWithSidebar(table, text, className, sidebarText, sidebarClassName) {
-    let line = addTextLine(table, text, className, width);
-
-    let sidebar = document.createElement("td");
-    sidebar.style.width = `${baseSidebarSize}px`;
-
-    sidebar.innerText = sidebarText;
-    if (sidebarClassName) {
-      sidebar.classList.add(sidebarClassName)
-    }
-    line.appendChild(sidebar);
-    return sidebar;
-  }
-
   function cellClick() {
     play(this.x, this.y);
   }
 
-  function resizeCells() {
-    //The baseLineSize*3 is to remove the height of the 'title', 'start' and 'end' lines
+  function sizePos(x, y, width, height) {
+    if (x != null && x != undefined) {
+      this.style.left = `${x}px`;
+    }
+    if (y != null && y != undefined) {
+      this.style.top = `${y}px`;
+    }
+    if (width != null && width != undefined) {
+      this.style.width = `${width}px`;
+    }
+    if (height != null && height != undefined) {
+      this.style.height = `${height}px`;
+    }
+  }
+
+  function addBox(className, text) {
+    const box = document.createElement("div");
+    box.classList.add("box")
+
+    if (className) {
+      box.classList.add(className)
+    }
+    if (text) {
+      box.innerText = text;
+    }
+    box.style.position = "absolute";
+    box.sizePos = sizePos
+    box.sizePos(0, 0, 50, 50);
+    document.body.appendChild(box);
+    return box;
+  }
+
+
+  let topBar;
+  let startBar;
+  let endBar;
+  let sidebar;
+  let attemptsBox;
+  let retryBox;
+
+  function resizeUi() {
+    //consider a padding for the entire UI
     let cellSizeHeigth = ((window.innerHeight - baseLineSize * 3) / height) | 0;
     let cellSizeWidth = ((window.innerWidth - baseSidebarSize) / width) | 0;
-    let cellSize = Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth);
+    let cellSize = Math.min(Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth), maxCellSize);
 
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const cell = cells[y][x];
-        cell.style.height = `${cellSize}px`;
-        cell.style.width = `${cellSize}px`;
-        cell.style.minHeight = `${cellSize}px`;
-        cell.style.minWidth = `${cellSize}px`;
-      }
+    const playAreaWidth = cellSize * width;
+    const totalViewWidth = playAreaWidth + baseSidebarSize;
+    const sidebarHeight = cellSize * height + baseLineSize * 2;
+
+    const offsetX = Math.max((window.innerWidth - cellSize * width - baseSidebarSize) / 2 | 0, 0);
+    const offsetY = Math.max((window.innerHeight - cellSize * height - baseLineSize * 3) / 2 | 0, 0);
+    const sidebarX = offsetX + playAreaWidth;
+
+    topBar.sizePos(offsetX, offsetY, totalViewWidth, baseLineSize);
+    const startBarY = offsetY + baseLineSize;
+    startBar.sizePos(offsetX, startBarY, playAreaWidth, baseLineSize);
+    const gridY = startBarY + baseLineSize;
+
+    for (let cell of cells) {
+      cell.sizePos(offsetX + cellSize * cell.x, gridY + cellSize * cell.y, cellSize, cellSize);
     }
+    const endBarY = gridY + cellSize * height;
+    endBar.sizePos(offsetX, endBarY, playAreaWidth, baseLineSize);
+    sidebar.sizePos(sidebarX, startBarY, baseSidebarSize, sidebarHeight);
+
+
+    attemptsBox.sizePos(sidebarX, startBarY, baseSidebarSize, baseLineSize);
+
+    retryBox.sizePos(sidebarX, endBarY, baseSidebarSize, baseLineSize);
+  }
+
+  function loadUi() {
+    topBar = addBox("", "Find the Path");
+    startBar = addBox("valid", "Start");
+    endBar = addBox("end", "End");
+    sidebar = addBox("", "");
+    attemptsBox = addBox("", "Attempt\n0");
+    retryBox = addBox("retry", "Retry");
+
+    retryBox.onclick = retryClick;
   }
 
   function loadTable() {
     generator = getGenerator();
     generator.seed(seed);
     generatedPath = generatePath(width, height);
-    let container = document.getElementById("container");
-    addTextLine(container, "Find the Path");
-    attemptsCell = addTextLineWithSidebar(container, "Start", "valid", "Attempt", "attempt");
     for (let y = 0; y < height; y++) {
-      let line = document.createElement("tr");
-      let cellLine = [];
       for (let x = 0; x < width; x++) {
-        let cell = document.createElement("td");
+        let cell = addBox("unselected");
         cell.x = x;
         cell.y = y;
         cell.onclick = cellClick
-        line.appendChild(cell);
-        cellLine.push(cell);
+        cells.push(cell);
       }
-      if (y == 0) {
-        let padding = document.createElement("td");
-        padding.rowSpan = height;
-        line.appendChild(padding);
-      }
-
-      container.appendChild(line);
-      cells.push(cellLine);
     }
-
-    addTextLineWithSidebar(container, "End", "end", "Retry", "retry").onclick = reset;
-    resizeCells();
-    reset()
+    resizeUi();
+    retry();
   }
 
 
   document.addEventListener("keypress", (event) => {
     if (event.code == "KeyR") {
-      reset();
+      retryClick();
     } else if (currentPath.length) {
       if (event.code == "KeyW" || event.code == "KeyI") {
         play(currentPath[currentPath.length - 1][0], currentPath[currentPath.length - 1][1] - 1);
@@ -360,9 +387,10 @@ function main() {
     }
   });
 
-  window.addEventListener("resize", resizeCells);
+  window.addEventListener("resize", resizeUi);
 
-  loadTable()
+  loadUi();
+  loadTable();
 
 
 

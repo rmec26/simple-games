@@ -38,6 +38,18 @@ table {
   animation-iteration-count: infinite;
 }
 
+.box {
+  /* display: grid;
+  place-items: center; */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  text-wrap-mode: nowrap;
+  border: 1px solid #dddddd;
+  text-align: center;
+}
+
 @keyframes win-animation {
   0% {
     background-color: hsl(0, 100%, 50%);
