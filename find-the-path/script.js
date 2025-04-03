@@ -1,14 +1,16 @@
 
 function main() {
-  let width = 5;
-  let height = 10;
+  let columns = 5;
+  let rows = 10;
   let attempt = 0;
+  let initialHints = 2;
   const baseLineHeight = 50;
   const baseSidebarWidth = 70;
   const minCellSize = 32;
   const maxCellSize = 96;
   let seed;
   let generator;
+  let hints;
 
 
   function parseSeed(seed) {
@@ -75,23 +77,34 @@ function main() {
   const paramsString = window.location.search;
   const searchParams = new URLSearchParams(paramsString);
 
-  if (searchParams.has("width")) {
-    let value = Number.parseInt(searchParams.get("width"));
-    if (!Number.isNaN(value) && value > 0) {
-      width = value;
+  function getIntParam(dafaultValue, ...paramList) {
+    for (const param of paramList) {
+      if (searchParams.has(param)) {
+        let value = Number.parseInt(searchParams.get(param));
+        if (!Number.isNaN(value) && value > 0) {
+          return value;
+        }
+      }
     }
+    return dafaultValue;
   }
 
-  if (searchParams.has("height")) {
-    let value = Number.parseInt(searchParams.get("height"));
-    if (!Number.isNaN(value) && value > 0) {
-      height = value;
+
+  function getParam(dafaultValue, ...paramList) {
+    for (const param of paramList) {
+      if (searchParams.has(param)) {
+        return searchParams.get(param);
+      }
     }
+    return dafaultValue;
   }
 
-  if (searchParams.has("seed")) {
-    seed = searchParams.get("seed");
-  }
+  columns = getIntParam(columns, "columns", "col", "c", "width");
+  rows = getIntParam(rows, "rows", "row", "r", "height");
+  initialHints = getIntParam(initialHints, "hints", "hint", "h");
+  seed = getParam(null, "seed", "s");
+
+  hints = initialHints;
 
   // ---Logic Code---
 
@@ -208,6 +221,8 @@ function main() {
 
   function newGame() {
     seed = null;
+    hints = initialHints;
+    hintsBox.innerText = `Hints\n${hints}`
     unloadTable();
     loadTable();
   }
@@ -220,7 +235,7 @@ function main() {
     hasFailed = false;
     endValue = null;
 
-    for (let i = 0; i < width; i++) {
+    for (let i = 0; i < columns; i++) {
       nextMoves.push([i, 0]);
     }
     updateMoveClasses()
@@ -236,17 +251,29 @@ function main() {
   function play(x, y) {
     if (!hasFailed && hasValue(nextMoves, x, y)) {
       if (hasValue(generatedPath, x, y)) {
-        if (y == height - 1) {
+        if (y == rows - 1) {
           endValue = [x, y];
         } else {
           currentPath.push([x, y]);
-          nextMoves = getAllValidNext(width, height, currentPath, x, y);
+          nextMoves = getAllValidNext(columns, rows, currentPath, x, y);
         }
       } else {
         hasFailed = true;
         endValue = [x, y];
       }
       updateMoveClasses()
+    }
+  }
+
+  function playHint() {
+    if (!endValue && hints) {
+      hints--;
+      hintsBox.innerText = `Hints\n${hints}`
+      for (let [x, y] of nextMoves) {
+        if (hasValue(generatedPath, x, y)) {
+          play(x, y);
+        }
+      }
     }
   }
 
@@ -292,21 +319,23 @@ function main() {
   let endBar;
   let sidebar;
   let attemptsBox;
-  let newBox;
-  let retryBox;
+  let hintsBox;
+  let hintButton;
+  let newButton;
+  let retryButton;
 
   function resizeUi() {
     //consider a padding for the entire UI
-    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 3) / height) | 0;
-    let cellSizeWidth = ((window.innerWidth - baseSidebarWidth) / width) | 0;
+    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 3) / rows) | 0;
+    let cellSizeWidth = ((window.innerWidth - baseSidebarWidth) / columns) | 0;
     let cellSize = Math.min(Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth), maxCellSize);
 
-    const playAreaWidth = cellSize * width;
+    const playAreaWidth = cellSize * columns;
     const totalViewWidth = playAreaWidth + baseSidebarWidth;
-    const sidebarHeight = cellSize * height + baseLineHeight * 2;
+    const sidebarHeight = cellSize * rows + baseLineHeight * 2;
 
-    const offsetX = Math.max((window.innerWidth - cellSize * width - baseSidebarWidth) / 2 | 0, 0);
-    const offsetY = Math.max((window.innerHeight - cellSize * height - baseLineHeight * 3) / 2 | 0, 0);
+    const offsetX = Math.max((window.innerWidth - cellSize * columns - baseSidebarWidth) / 2 | 0, 0);
+    const offsetY = Math.max((window.innerHeight - cellSize * rows - baseLineHeight * 3) / 2 | 0, 0);
     const sidebarX = offsetX + playAreaWidth;
 
     topBar.sizePos(offsetX, offsetY, totalViewWidth, baseLineHeight);
@@ -317,15 +346,17 @@ function main() {
     for (let cell of cells) {
       cell.sizePos(offsetX + cellSize * cell.x, gridY + cellSize * cell.y, cellSize, cellSize);
     }
-    const endBarY = gridY + cellSize * height;
+    const endBarY = gridY + cellSize * rows;
     endBar.sizePos(offsetX, endBarY, playAreaWidth, baseLineHeight);
     sidebar.sizePos(sidebarX, startBarY, baseSidebarWidth, sidebarHeight);
 
 
     attemptsBox.sizePos(sidebarX, startBarY, baseSidebarWidth, baseLineHeight);
+    hintsBox.sizePos(sidebarX, startBarY + baseLineHeight, baseSidebarWidth, baseLineHeight);
 
-    newBox.sizePos(sidebarX, endBarY - baseLineHeight, baseSidebarWidth, baseLineHeight);
-    retryBox.sizePos(sidebarX, endBarY, baseSidebarWidth, baseLineHeight);
+    hintButton.sizePos(sidebarX, endBarY - baseLineHeight * 2, baseSidebarWidth, baseLineHeight);
+    newButton.sizePos(sidebarX, endBarY - baseLineHeight, baseSidebarWidth, baseLineHeight);
+    retryButton.sizePos(sidebarX, endBarY, baseSidebarWidth, baseLineHeight);
   }
 
   function loadUi() {
@@ -334,11 +365,14 @@ function main() {
     endBar = addBox("end", "End");
     sidebar = addBox("", "");
     attemptsBox = addBox("", "Attempt\n0");
-    newBox = addBox("sidebarButton", "New");
-    retryBox = addBox("sidebarButton", "Retry");
+    hintsBox = addBox("", `Hints\n${hints}`);
+    hintButton = addBox("sidebarButton", "Hint");
+    newButton = addBox("sidebarButton", "New");
+    retryButton = addBox("sidebarButton", "Retry");
 
-    newBox.onclick = newGame;
-    retryBox.onclick = retryClick;
+    hintButton.onclick = playHint;
+    newButton.onclick = newGame;
+    retryButton.onclick = retryClick;
   }
 
   function loadTable() {
@@ -347,9 +381,9 @@ function main() {
     //This is to keep the first step from being too close from previous recent games due to using the current timestamp as the default seed
     generator.generate();
 
-    generatedPath = generatePath(width, height);
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
+    generatedPath = generatePath(columns, rows);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
         let cell = addBox("unselected");
         cell.x = x;
         cell.y = y;
@@ -376,6 +410,8 @@ function main() {
       retryClick();
     } else if (event.code == "KeyN") {
       newGame();
+    } else if (event.code == "KeyH") {
+      playHint();
     } else if (currentPath.length) {
       if (event.code == "KeyW" || event.code == "KeyI") {
         play(currentPath[currentPath.length - 1][0], currentPath[currentPath.length - 1][1] - 1);
@@ -422,7 +458,7 @@ function main() {
   //Disables the debug if running on Github pages
   if (!window.location.hostname.includes("github.io")) {
     function showCurrentPath() {
-      printPath(width, height, generatedPath)
+      printPath(columns, rows, generatedPath)
     }
 
     function autoWin() {

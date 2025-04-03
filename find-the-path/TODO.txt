@@ -1,11 +1,18 @@
 check how to make it work properly on android pwa
-add bottom ui to set width height and seed
+add bottom ui to set the game options
 add share button
 remove bootstrap
 
-change width and height to row and column
+
 add handling of space between the top and bottom boxes in the sidebar when the grid is small enough to keep them from overlapping
 add padding of the view
+
+make the system keep all relevant parameters on the url always showing an up-to-date
+
+final move popup modal
+
+move to module based system
+
 
 lives system?
 checkpoint system?
