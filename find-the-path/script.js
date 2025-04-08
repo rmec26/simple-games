@@ -13,6 +13,8 @@ function main() {
   let hints;
 
 
+  // ---RNG Code---
+
   function parseSeed(seed) {
     if (seed === null) {
       return Date.now();
@@ -202,7 +204,7 @@ function main() {
 
 
 
-  function updateMoveClasses() {
+  function updateUi() {
     for (let cell of cells) {
       cell.classList.remove("unselected", "valid", "nextOption", "fail", "end", "win");
       if (hasValue(currentPath, cell.x, cell.y)) {
@@ -217,12 +219,13 @@ function main() {
         cell.classList.add("unselected");
       }
     }
+    attemptsBox.innerText = `Attempt\n${attempt}`
+    hintsBox.innerText = `Hints\n${hints}`
   }
 
   function newGame() {
     seed = null;
     hints = initialHints;
-    hintsBox.innerText = `Hints\n${hints}`
     unloadTable();
     loadTable();
   }
@@ -238,8 +241,7 @@ function main() {
     for (let i = 0; i < columns; i++) {
       nextMoves.push([i, 0]);
     }
-    updateMoveClasses()
-    attemptsBox.innerText = `Attempt\n${attempt}`
+    updateUi()
   }
 
   function retryClick() {
@@ -261,14 +263,13 @@ function main() {
         hasFailed = true;
         endValue = [x, y];
       }
-      updateMoveClasses()
+      updateUi();
     }
   }
 
   function playHint() {
     if (!endValue && hints) {
       hints--;
-      hintsBox.innerText = `Hints\n${hints}`
       for (let [x, y] of nextMoves) {
         if (hasValue(generatedPath, x, y)) {
           play(x, y);
@@ -464,7 +465,7 @@ function main() {
     function autoWin() {
       currentPath = [...generatedPath];
       nextMoves = [currentPath.pop()];
-      updateMoveClasses();
+      updateUi();
     }
 
     globalThis.showCurrentPath = showCurrentPath;
