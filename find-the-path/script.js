@@ -1,16 +1,15 @@
+//@ts-check
 
 function main() {
-  let columns = 5;
-  let rows = 10;
-  let attempt = 0;
-  let initialHints = 2;
   const baseLineHeight = 50;
   const baseSidebarWidth = 70;
   const minCellSize = 32;
   const maxCellSize = 96;
-  let seed;
-  let generator;
-  let hints;
+
+  const stateToKeep = [];
+
+  const state = {};
+
 
 
   // ---RNG Code---
@@ -74,45 +73,11 @@ function main() {
   }
 
 
-  // ---Param String Code---
-
-  const paramsString = window.location.search;
-  const searchParams = new URLSearchParams(paramsString);
-
-  function getIntParam(dafaultValue, ...paramList) {
-    for (const param of paramList) {
-      if (searchParams.has(param)) {
-        let value = Number.parseInt(searchParams.get(param));
-        if (!Number.isNaN(value) && value > 0) {
-          return value;
-        }
-      }
-    }
-    return dafaultValue;
-  }
-
-
-  function getParam(dafaultValue, ...paramList) {
-    for (const param of paramList) {
-      if (searchParams.has(param)) {
-        return searchParams.get(param);
-      }
-    }
-    return dafaultValue;
-  }
-
-  columns = getIntParam(columns, "columns", "col", "c", "width");
-  rows = getIntParam(rows, "rows", "row", "r", "height");
-  initialHints = getIntParam(initialHints, "hints", "hint", "h");
-  seed = getParam(null, "seed", "s");
-
-  hints = initialHints;
-
   // ---Logic Code---
 
   function random(max) {
     // return (Math.random() * max) | 0;
-    return generator.generateRange(0, max - 1);
+    return state.generator.generateRange(0, max - 1);
   }
 
   function hasValue(currentPath, x, y) {
@@ -190,88 +155,111 @@ function main() {
 
   // ---UI Code---
 
-  let generatedPath
-
-  let cells = [];
-
-  let nextMoves;
-  let currentPath;
-
-  let hasFailed;
-  let endValue;
-
-
-
-
-
   function updateUi() {
-    for (let cell of cells) {
+    for (let cell of state.cells) {
       cell.classList.remove("unselected", "valid", "nextOption", "fail", "end", "win");
-      if (hasValue(currentPath, cell.x, cell.y)) {
+      if (hasValue(state.currentPath, cell.x, cell.y)) {
         cell.classList.add("valid");
-      } else if (!endValue && hasValue(nextMoves, cell.x, cell.y)) {
+      } else if (!state.endValue && hasValue(state.nextMoves, cell.x, cell.y)) {
         cell.classList.add("nextOption");
-      } else if (endValue && endValue[0] == cell.x && endValue[1] == cell.y) {
-        cell.classList.add(hasFailed ? "fail" : "valid");
-      } else if (endValue && !hasFailed) {
+      } else if (state.endValue && state.endValue[0] == cell.x && state.endValue[1] == cell.y) {
+        cell.classList.add(state.hasFailed ? "fail" : "valid");
+      } else if (state.endValue && !state.hasFailed) {
         cell.classList.add("win");
       } else {
         cell.classList.add("unselected");
       }
     }
-    attemptsBox.innerText = `Attempt\n${attempt}`
-    hintsBox.innerText = `Hints\n${hints}`
+    attemptsBox.innerText = `Attempt\n${state.attempt}`
+    hintsBox.innerText = `Hints\n${state.currentHints}`
   }
 
-  function newGame() {
-    seed = null;
-    hints = initialHints;
-    unloadTable();
-    loadTable();
+  function loadParamsToState(params) {
+    for (let [k, v] of Object.entries(params)) {
+      state[k] = v;
+    }
   }
+
+  function generateSeedIfNone() {
+    if (!state.seed) {
+      state.seed = Date.now().toString();
+    }
+  }
+
+  function loadGenerator() {
+    state.generator = getGenerator();
+    state.generator.seed(state.seed);
+    //This is to keep the first step from being too close from previous recent games due to using the current timestamp as the default seed
+    state.generator.generate();
+  }
+
+  function clearQuery() {
+    let url = new URL(window.location.href);
+    url.search = "";
+    history.replaceState(history.state, '', url.href);
+  }
+
+  function newGame(params) {
+    unloadTable();
+    if (params) {
+      loadParamsToState(params)
+    } else {
+
+      clearQuery();
+      //TODO remove this after implementing options
+      state.seed = null;
+      // loadParamsfromOptions()
+    }
+
+    state.currentHints = state.hints;
+    generateSeedIfNone();
+    loadGenerator();
+    loadTable()
+  }
+
 
   function retry() {
-    attempt++;
-    nextMoves = [];
-    currentPath = [];
+    state.attempt++;
+    state.nextMoves = [];
+    state.currentPath = [];
 
-    hasFailed = false;
-    endValue = null;
+    state.hasFailed = false;
+    state.endValue = null;
 
-    for (let i = 0; i < columns; i++) {
-      nextMoves.push([i, 0]);
+    for (let i = 0; i < state.columns; i++) {
+      state.nextMoves.push([i, 0]);
     }
     updateUi()
   }
 
   function retryClick() {
-    if (hasFailed) {
+    if (state.hasFailed) {
       retry();
     }
   }
 
   function play(x, y) {
-    if (!hasFailed && hasValue(nextMoves, x, y)) {
-      if (hasValue(generatedPath, x, y)) {
-        if (y == rows - 1) {
-          endValue = [x, y];
+    if (!state.hasFailed && hasValue(state.nextMoves, x, y)) {
+      if (hasValue(state.generatedPath, x, y)) {
+        if (y == state.rows - 1) {
+          state.endValue = [x, y];
         } else {
-          currentPath.push([x, y]);
-          nextMoves = getAllValidNext(columns, rows, currentPath, x, y);
+          state.currentPath.push([x, y]);
+          state.nextMoves = getAllValidNext(state.columns, state.rows, state.currentPath, x, y);
         }
       } else {
-        hasFailed = true;
-        endValue = [x, y];
+        state.hasFailed = true;
+        state.endValue = [x, y];
       }
       updateUi();
     }
   }
 
   function playHint() {
-    if (!endValue && hints) {
-      hints--;
-      for (let [x, y] of nextMoves) {
-        if (hasValue(generatedPath, x, y)) {
+    if (!state.endValue && state.currentHints) {
+      state.currentHints--;
+      for (let [x, y] of state.nextMoves) {
+        if (hasValue(state.generatedPath, x, y)) {
           play(x, y);
         }
       }
@@ -327,16 +315,16 @@ function main() {
 
   function resizeUi() {
     //consider a padding for the entire UI
-    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 3) / rows) | 0;
-    let cellSizeWidth = ((window.innerWidth - baseSidebarWidth) / columns) | 0;
+    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 3) / state.rows) | 0;
+    let cellSizeWidth = ((window.innerWidth - baseSidebarWidth) / state.columns) | 0;
     let cellSize = Math.min(Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth), maxCellSize);
 
-    const playAreaWidth = cellSize * columns;
+    const playAreaWidth = cellSize * state.columns;
     const totalViewWidth = playAreaWidth + baseSidebarWidth;
-    const sidebarHeight = cellSize * rows + baseLineHeight * 2;
+    const sidebarHeight = cellSize * state.rows + baseLineHeight * 2;
 
-    const offsetX = Math.max((window.innerWidth - cellSize * columns - baseSidebarWidth) / 2 | 0, 0);
-    const offsetY = Math.max((window.innerHeight - cellSize * rows - baseLineHeight * 3) / 2 | 0, 0);
+    const offsetX = Math.max((window.innerWidth - cellSize * state.columns - baseSidebarWidth) / 2 | 0, 0);
+    const offsetY = Math.max((window.innerHeight - cellSize * state.rows - baseLineHeight * 3) / 2 | 0, 0);
     const sidebarX = offsetX + playAreaWidth;
 
     topBar.sizePos(offsetX, offsetY, totalViewWidth, baseLineHeight);
@@ -344,10 +332,10 @@ function main() {
     startBar.sizePos(offsetX, startBarY, playAreaWidth, baseLineHeight);
     const gridY = startBarY + baseLineHeight;
 
-    for (let cell of cells) {
+    for (let cell of state.cells) {
       cell.sizePos(offsetX + cellSize * cell.x, gridY + cellSize * cell.y, cellSize, cellSize);
     }
-    const endBarY = gridY + cellSize * rows;
+    const endBarY = gridY + cellSize * state.rows;
     endBar.sizePos(offsetX, endBarY, playAreaWidth, baseLineHeight);
     sidebar.sizePos(sidebarX, startBarY, baseSidebarWidth, sidebarHeight);
 
@@ -366,30 +354,27 @@ function main() {
     endBar = addBox("end", "End");
     sidebar = addBox("", "");
     attemptsBox = addBox("", "Attempt\n0");
-    hintsBox = addBox("", `Hints\n${hints}`);
+    hintsBox = addBox("", `Hints\n0`);
     hintButton = addBox("sidebarButton", "Hint");
     newButton = addBox("sidebarButton", "New");
     retryButton = addBox("sidebarButton", "Retry");
 
-    hintButton.onclick = playHint;
-    newButton.onclick = newGame;
-    retryButton.onclick = retryClick;
+    hintButton.onclick = () => playHint();
+    newButton.onclick = () => newGame();
+    retryButton.onclick = () => retryClick();
   }
 
   function loadTable() {
-    generator = getGenerator();
-    generator.seed(seed);
-    //This is to keep the first step from being too close from previous recent games due to using the current timestamp as the default seed
-    generator.generate();
+    state.cells = [];
 
-    generatedPath = generatePath(columns, rows);
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < columns; x++) {
+    state.generatedPath = generatePath(state.columns, state.rows);
+    for (let y = 0; y < state.rows; y++) {
+      for (let x = 0; x < state.columns; x++) {
         let cell = addBox("unselected");
         cell.x = x;
         cell.y = y;
         cell.onclick = cellClick
-        cells.push(cell);
+        state.cells.push(cell);
       }
     }
     resizeUi();
@@ -397,14 +382,97 @@ function main() {
   }
 
   function unloadTable() {
-    attempt = 0;
-    for (let cell of cells) {
-      cell.remove();
+    state.attempt = 0;
+    if (state.cells) {
+      for (let cell of state.cells) {
+        cell.remove();
+      }
+      delete state.cells;
     }
   }
 
-  loadUi();
-  loadTable();
+
+  function getSearchParams() {
+    let url = new URL(window.location.href);
+    return url.searchParams;
+  }
+
+
+
+  function processParam(validator, resultObj, paramList) {
+    const searchParams = getSearchParams();
+
+    for (const param of paramList) {
+      if (searchParams.has(param)) {
+        let [isValid, value] = validator(searchParams.get(param));
+        if (isValid) {
+          resultObj[paramList[0]] = value;
+          return;
+        }
+      }
+    }
+  }
+
+  function processIntParam(resultObj, ...paramList) {
+    return processParam((param) => {
+      let value = Number.parseInt(param);
+      if (!Number.isNaN(value) && value > 0) {
+        return [true, value];
+      } else {
+        return [false];
+      }
+    }, resultObj, paramList);
+  }
+
+  function processsStringParam(resultObj, ...paramList) {
+    return processParam((param) => {
+      if (param.length) {
+        return [true, param];
+      } else {
+        return [false];
+      }
+    }, resultObj, paramList);
+  }
+
+
+
+
+
+
+  function getBaseParameters() {
+    return { columns: 5, rows: 10, hints: 2, seed: null };
+  }
+
+  function hasQueryParameters() {
+    return !!getSearchParams().size;
+  }
+
+  function processQueryParameters() {
+    let processedQueryParams = {};
+    processIntParam(processedQueryParams, "columns", "col", "c", "width");
+    processIntParam(processedQueryParams, "rows", "row", "r", "height");
+    processIntParam(processedQueryParams, "hints", "hint", "h");
+    processsStringParam(processedQueryParams, "seed", "s");
+    return { ...getBaseParameters(), ...processedQueryParams };
+  }
+
+  function hasLocalStorage() {
+    //TODO Add local storage
+    return false;
+  }
+
+
+
+  function firstLoad() {
+    loadUi();
+    if (hasQueryParameters()) {
+      newGame(processQueryParameters())
+    } else if (hasLocalStorage()) {
+      loadStorageIntoState();
+    } else {
+      newGame(getBaseParameters());
+    }
+  }
 
   document.addEventListener("keypress", (event) => {
     if (event.code == "KeyR") {
@@ -413,15 +481,15 @@ function main() {
       newGame();
     } else if (event.code == "KeyH") {
       playHint();
-    } else if (currentPath.length) {
+    } else if (state.currentPath.length) {
       if (event.code == "KeyW" || event.code == "KeyI") {
-        play(currentPath[currentPath.length - 1][0], currentPath[currentPath.length - 1][1] - 1);
+        play(state.currentPath[state.currentPath.length - 1][0], state.currentPath[state.currentPath.length - 1][1] - 1);
       } else if (event.code == "KeyS" || event.code == "KeyK") {
-        play(currentPath[currentPath.length - 1][0], currentPath[currentPath.length - 1][1] + 1);
+        play(state.currentPath[state.currentPath.length - 1][0], state.currentPath[state.currentPath.length - 1][1] + 1);
       } else if (event.code == "KeyA" || event.code == "KeyJ") {
-        play(currentPath[currentPath.length - 1][0] - 1, currentPath[currentPath.length - 1][1]);
+        play(state.currentPath[state.currentPath.length - 1][0] - 1, state.currentPath[state.currentPath.length - 1][1]);
       } else if (event.code == "KeyD" || event.code == "KeyL") {
-        play(currentPath[currentPath.length - 1][0] + 1, currentPath[currentPath.length - 1][1]);
+        play(state.currentPath[state.currentPath.length - 1][0] + 1, state.currentPath[state.currentPath.length - 1][1]);
       }
     } else {
       if (event.code == "Digit1") {
@@ -448,9 +516,6 @@ function main() {
     }
   });
 
-
-
-
   window.addEventListener("resize", resizeUi);
 
 
@@ -459,16 +524,19 @@ function main() {
   //Disables the debug if running on Github pages
   if (!window.location.hostname.includes("github.io")) {
     function showCurrentPath() {
-      printPath(columns, rows, generatedPath)
+      printPath(state.columns, state.rows, state.generatedPath)
     }
 
     function autoWin() {
-      currentPath = [...generatedPath];
-      nextMoves = [currentPath.pop()];
+      state.currentPath = [...state.generatedPath];
+      state.nextMoves = [state.currentPath.pop()];
       updateUi();
     }
 
     globalThis.showCurrentPath = showCurrentPath;
     globalThis.autoWin = autoWin;
+    globalThis.state = state;
   }
+
+  firstLoad();
 }
