@@ -7,8 +7,6 @@ remove bootstrap
 add handling of space between the top and bottom boxes in the sidebar when the grid is small enough to keep them from overlapping
 add padding of the view
 
-make the system keep all relevant parameters on the url always showing an up-to-date
-
 final move popup modal
 
 move to module based system
@@ -20,8 +18,6 @@ save current seed
 
 possible retro inspired UI
 
-hint system?
-  choses the next option
 
 lives vs hints
 
@@ -30,3 +26,5 @@ Hints chooses the next option when desired
 
 Lives should be per attempt
 Hints should be per game
+
+add current seed bar at the bottom

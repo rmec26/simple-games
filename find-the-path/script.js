@@ -1,16 +1,66 @@
 //@ts-check
 
 function main() {
+
   const baseLineHeight = 50;
   const baseSidebarWidth = 70;
   const minCellSize = 32;
   const maxCellSize = 96;
 
-  const stateToKeep = [];
 
+  // ---State Code---
+  const stateVersion = "1";
+
+  const stateToKeep = ["attempt", "columns", "rows", "hints", "currentHints", "currentPath", "seed", "nextMoves", "hasFailed", "generatedPath", "endValue"];
   const state = {};
 
+  function getHash(str) {
+    return parseSeed(str).toString();
+  }
 
+  function compareHash(str, hash) {
+    return getHash(str) === hash;
+  }
+
+  function hasStateInStorage() {
+    if (localStorage.getItem("version") === stateVersion) {
+      let state = localStorage.getItem("state");
+      let hash = localStorage.getItem("hash");
+      if (state && hash) {
+        return compareHash(state, hash);
+      }
+    }
+    return false;
+  }
+
+  function loadStateFromStorage() {
+    try {
+      if (hasStateInStorage()) {
+        let storedState = JSON.parse(localStorage.getItem("state"));
+        for (let k of stateToKeep) {
+          state[k] = storedState[k]
+        }
+        return true;
+      }
+    } catch (e) { }
+    return false;
+  }
+
+  function saveStateToStorage() {
+    localStorage.setItem("version", stateVersion);
+    let stateToStore = {};
+    for (let k of stateToKeep) {
+      stateToStore[k] = state[k];
+    }
+    stateToStore = JSON.stringify(stateToStore);
+    const hash = getHash(stateToStore);
+    localStorage.setItem("state", stateToStore);
+    localStorage.setItem("hash", hash);
+  }
+
+  function clearStorage() {
+    localStorage.clear();
+  }
 
   // ---RNG Code---
 
@@ -172,6 +222,7 @@ function main() {
     }
     attemptsBox.innerText = `Attempt\n${state.attempt}`
     hintsBox.innerText = `Hints\n${state.currentHints}`
+    saveStateToStorage();
   }
 
   function loadParamsToState(params) {
@@ -186,11 +237,12 @@ function main() {
     }
   }
 
-  function loadGenerator() {
+  function generatePathFromSeed() {
     state.generator = getGenerator();
     state.generator.seed(state.seed);
     //This is to keep the first step from being too close from previous recent games due to using the current timestamp as the default seed
     state.generator.generate();
+    state.generatedPath = generatePath(state.columns, state.rows);
   }
 
   function clearQuery() {
@@ -213,8 +265,9 @@ function main() {
 
     state.currentHints = state.hints;
     generateSeedIfNone();
-    loadGenerator();
+    generatePathFromSeed();
     loadTable()
+    retry();
   }
 
 
@@ -229,7 +282,7 @@ function main() {
     for (let i = 0; i < state.columns; i++) {
       state.nextMoves.push([i, 0]);
     }
-    updateUi()
+    updateUi();
   }
 
   function retryClick() {
@@ -366,8 +419,6 @@ function main() {
 
   function loadTable() {
     state.cells = [];
-
-    state.generatedPath = generatePath(state.columns, state.rows);
     for (let y = 0; y < state.rows; y++) {
       for (let x = 0; x < state.columns; x++) {
         let cell = addBox("unselected");
@@ -378,7 +429,6 @@ function main() {
       }
     }
     resizeUi();
-    retry();
   }
 
   function unloadTable() {
@@ -456,19 +506,14 @@ function main() {
     return { ...getBaseParameters(), ...processedQueryParams };
   }
 
-  function hasLocalStorage() {
-    //TODO Add local storage
-    return false;
-  }
-
-
-
   function firstLoad() {
     loadUi();
     if (hasQueryParameters()) {
       newGame(processQueryParameters())
-    } else if (hasLocalStorage()) {
-      loadStorageIntoState();
+    } else if (hasStateInStorage()) {
+      loadStateFromStorage();
+      loadTable();
+      updateUi();
     } else {
       newGame(getBaseParameters());
     }
@@ -536,6 +581,7 @@ function main() {
     globalThis.showCurrentPath = showCurrentPath;
     globalThis.autoWin = autoWin;
     globalThis.state = state;
+    globalThis.clearStorage = clearStorage;
   }
 
   firstLoad();
