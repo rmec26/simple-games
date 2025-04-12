@@ -222,6 +222,7 @@ function main() {
     }
     attemptsBox.innerText = `Attempt\n${state.attempt}`
     hintsBox.innerText = `Hints\n${state.currentHints}`
+    seedBar.innerText = `Seed: ${state.seed}`
     saveStateToStorage();
   }
 
@@ -359,6 +360,7 @@ function main() {
   let topBar;
   let startBar;
   let endBar;
+  let seedBar;
   let sidebar;
   let attemptsBox;
   let hintsBox;
@@ -368,7 +370,7 @@ function main() {
 
   function resizeUi() {
     //consider a padding for the entire UI
-    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 3) / state.rows) | 0;
+    let cellSizeHeigth = ((window.innerHeight - baseLineHeight * 4) / state.rows) | 0;
     let cellSizeWidth = ((window.innerWidth - baseSidebarWidth) / state.columns) | 0;
     let cellSize = Math.min(Math.max(minCellSize, cellSizeHeigth > cellSizeWidth ? cellSizeWidth : cellSizeHeigth), maxCellSize);
 
@@ -377,7 +379,7 @@ function main() {
     const sidebarHeight = cellSize * state.rows + baseLineHeight * 2;
 
     const offsetX = Math.max((window.innerWidth - cellSize * state.columns - baseSidebarWidth) / 2 | 0, 0);
-    const offsetY = Math.max((window.innerHeight - cellSize * state.rows - baseLineHeight * 3) / 2 | 0, 0);
+    const offsetY = Math.max((window.innerHeight - cellSize * state.rows - baseLineHeight * 4) / 2 | 0, 0);
     const sidebarX = offsetX + playAreaWidth;
 
     topBar.sizePos(offsetX, offsetY, totalViewWidth, baseLineHeight);
@@ -390,6 +392,9 @@ function main() {
     }
     const endBarY = gridY + cellSize * state.rows;
     endBar.sizePos(offsetX, endBarY, playAreaWidth, baseLineHeight);
+    const seedBarY = endBarY + baseLineHeight;
+
+    seedBar.sizePos(offsetX, seedBarY, totalViewWidth, baseLineHeight);
     sidebar.sizePos(sidebarX, startBarY, baseSidebarWidth, sidebarHeight);
 
 
@@ -405,6 +410,7 @@ function main() {
     topBar = addBox("", "Find the Path");
     startBar = addBox("valid", "Start");
     endBar = addBox("end", "End");
+    seedBar = addBox("", "Seed: ");
     sidebar = addBox("", "");
     attemptsBox = addBox("", "Attempt\n0");
     hintsBox = addBox("", `Hints\n0`);
